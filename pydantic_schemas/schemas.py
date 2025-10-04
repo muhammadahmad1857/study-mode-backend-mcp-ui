@@ -2,6 +2,12 @@ from enum import Enum
 from typing import Any, List, Literal, Union
 from pydantic import BaseModel, Field
 
+
+class ChatRequest(BaseModel):
+    query: str
+    session_id: str
+
+
 # Enum for part type
 class PartType(str, Enum):
     """Type of part in the agent response."""

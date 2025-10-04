@@ -107,8 +107,8 @@ def create_study_agent(instructions: str, mcp_server: MCPServer, session: SQLite
 # ======================
 # Runner helper
 # ======================
-async def run_agent(agent: Agent, session: SQLiteSession | None = None) -> dict:
+async def run_agent(agent: Agent, session: SQLiteSession | None = None,query:str) -> dict:
     trace_id = gen_trace_id()
     print(f"\nView trace: https://platform.openai.com/traces/trace?trace_id={trace_id}\n")
-    result = await Runner.run(agent, "User query executed", session=session)
+    result = await Runner.run(agent, query, session=session)
     return result.final_output.model_dump()

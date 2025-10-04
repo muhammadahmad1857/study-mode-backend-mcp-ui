@@ -84,17 +84,92 @@ def doc_search_tool(query: str) -> str:
 
 
 
-@mcp.tool(name="show_external_url", description="Show an external URL in an iframe")
-def show_external_url() -> list[UIResource]:
-    """Creates a UI resource displaying an external URL (example.com)."""
+from typing import List
+
+@mcp.tool(
+    name="mcq_quiz_component",
+    description="Displays a dynamic MCQ quiz with question, options, and correct answer."
+)
+def show_external_url(question: str, options: List[str], correct: str) -> list[UIResource]:
+    """Creates a UI resource displaying a dynamic MCQ quiz."""
+    
+    # Build HTML for the quiz
+    htmlString = f"""
+    <style>
+        .mcq-container {{
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            border: 2px solid #FD7A00;
+            border-radius: 12px;
+            padding: 20px;
+            background: #fff8f0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }}
+        .mcq-question {{
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+        }}
+        .mcq-options {{
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }}
+        .mcq-option {{
+            padding: 12px 20px;
+            border: 2px solid #FD7A00;
+            border-radius: 8px;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 16px;
+            color: #333;
+        }}
+        .mcq-option:hover {{
+            background: #FD7A00;
+            color: #fff;
+        }}
+        .mcq-option.selected.correct {{
+            background: #28a745;
+            color: #fff;
+            border-color: #28a745;
+        }}
+        .mcq-option.selected.incorrect {{
+            background: #dc3545;
+            color: #fff;
+            border-color: #dc3545;
+        }}
+    </style>
+    <div class="mcq-container">
+        <div class="mcq-question">{question}</div>
+        <div class="mcq-options">
+            {"".join([f'<div class="mcq-option" onclick="checkAnswer(this, `{correct}`)">{opt}</div>' for opt in options])}
+        </div>
+    </div>
+    <script>
+        function checkAnswer(el, correct) {{
+            document.querySelectorAll('.mcq-option').forEach(opt => opt.classList.remove('selected','correct','incorrect'));
+            el.classList.add('selected');
+            if(el.textContent.trim() === correct) {{
+                el.classList.add('correct');
+            }} else {{
+                el.classList.add('incorrect');
+            }}
+        }}
+    </script>
+    """
+
     ui_resource = create_ui_resource({
-        "uri": "ui://greeting",
+        "uri": "ui://mcq_quiz",
         "content": {
-            "type": "externalUrl",
-            "iframeUrl": "https://example.com"
+            "type": "rawHtml",
+            "htmlString": htmlString
         },
         "encoding": "text"
     })
+    
     return [ui_resource]
 
 
@@ -102,7 +177,7 @@ def show_external_url() -> list[UIResource]:
 def study_mode_prompt_v1() -> str:
     current_date = datetime.now().strftime("%Y-%m-%d")
     return f"""
-Developer: **IDENTITY & CONTEXT**
+Developer: Developer: **IDENTITY & CONTEXT**
 * You are GEMINI operating in **STUDY MODE**.
 * Knowledge cutoff: 2025-01
 * Current date: {current_date}
@@ -184,7 +259,7 @@ Use only the listed knowledge tools. For routine retrieval, invoke them as neede
 1. Never simply provide answers—use hints, questions, and scaffolding to guide students.
 2. Always contextualize examples to real-life scenarios or the student’s interests.
 3. After covering difficult topics, reinforce and summarize concepts, checking for understanding and offering memory aids.
-4. Mandatory: All outputs must be formatted and handed off to the formatting agent.
+4. MANDATORY: ALL outputs MUST be formatted and handed off to the formatting agent. It is ABSOLUTELY REQUIRED; no output should ever be returned directly—EVERY response, whether to a simple greeting or a complex query, must always be handed off to the formatting agent for delivery.
 5. Break complex explanations into logical, digestible steps.
 6. Use positive reinforcement—always encourage and praise effort, maintaining a supportive tone.
 7. Adjust the pacing of explanations to match the student’s comprehension speed.
@@ -203,4 +278,4 @@ if __name__ == "__main__":
     import uvicorn
     print("Starting MCP server...")
     # Bind to localhost only for security - change to 0.0.0.0 only if needed for external access
-    uvicorn.run("server:mcp_app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("server:mcp_app", host="127.0.0.1", port=5000, reload=True)
