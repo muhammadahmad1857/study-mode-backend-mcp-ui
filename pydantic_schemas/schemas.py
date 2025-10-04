@@ -1,22 +1,21 @@
 from enum import Enum
 from typing import Any, List, Literal, Union
-from pydantic import BaseModel, root_validator, Field
+from pydantic import BaseModel, Field
 
 # Enum for part type
 class PartType(str, Enum):
     """Type of part in the agent response."""
     TEXT = "text"
-    REASONING = "reasoning"
     UI_RESOURCE = "ui-resource"
 
-# Strict schema for UI resource
+# Strict schema for UI resource (for components)
 class UIResource(BaseModel):
     """
-    Represents a UI resource, such as an image or file, referenced by URI.
+    Represents a UI resource, such as a component, image, or file, referenced by URI.
     """
     uri: str = Field(..., description="The URI of the resource", example="https://example.com/resource.png")
     mimeType: str = Field("text/uri-list", description="The MIME type of the resource", example="image/png")
-    text: str = Field(..., description="A description or label for the resource", example="Example image")
+    text: str = Field(..., description="A description or label for the resource", example="Example component")
     type: Literal["resource", "UIResource"] = "UIResource"
 
     class Config:
@@ -24,7 +23,7 @@ class UIResource(BaseModel):
             "example": {
                 "uri": "https://example.com/resource.png",
                 "mimeType": "image/png",
-                "text": "Example image",
+                "text": "Example component",
                 "type": "UIResource"
             }
         }
@@ -32,31 +31,11 @@ class UIResource(BaseModel):
 # Schema for each part
 class Part(BaseModel):
     """
-    Represents a part of the agent's response, which can be text, reasoning, or a UI resource.
+    Represents a part of the agent's response, which can be text or a UI resource.
     """
     type: PartType = Field(..., description="The type of the part", example="text")
-    text: Any = Field(None, description="Text content for text or reasoning parts", example="This is a text part.")
-    resource: Union[UIResource, None] = Field(
-        None, description="UIResource object for ui-resource parts",
-        example={
-            "uri": "https://example.com/resource.png",
-            "mimeType": "image/png",
-            "text": "Example image",
-            "type": "resource"
-        }
-    )
-
-    @root_validator(pre=True)
-    def set_correct_key(cls, values):
-        t = values.get("type")
-        # If type is ui-resource, move text to resource if needed
-        if t == PartType.UI_RESOURCE:
-            if "text" in values and not isinstance(values.get("resource"), dict):
-                values["resource"] = values.pop("text")
-        else:
-            if "resource" in values and not isinstance(values.get("text"), str):
-                values["text"] = values.pop("resource")
-        return values
+    text: Union[str, None] = Field(None, description="Text content for text parts", example="This is a text part.")
+    resource: Union[UIResource, None] = Field(None, description="UIResource object for ui-resource parts")
 
     class Config:
         json_schema_extra = {
@@ -67,18 +46,13 @@ class Part(BaseModel):
                     "resource": None
                 },
                 {
-                    "type": "reasoning",
-                    "text": "This is a reasoning part.",
-                    "resource": None
-                },
-                {
                     "type": "ui-resource",
                     "text": None,
                     "resource": {
                         "uri": "https://example.com/resource.png",
                         "mimeType": "image/png",
-                        "text": "Example image",
-                        "type": "resource"
+                        "text": "Example component",
+                        "type": "UIResource"
                     }
                 }
             ]
@@ -92,24 +66,7 @@ class AgentResponse(BaseModel):
     content: str = Field(..., description="The main content of the agent's response", example="Here is the answer to your question.")
     parts: List[Part] = Field(
         ..., 
-        description="A list of parts that make up the agent's response.",
-        example=[
-            {
-                "type": "text",
-                "text": "This is a text part.",
-                "resource": None
-            },
-            {
-                "type": "ui-resource",
-                "text": None,
-                "resource": {
-                    "uri": "https://example.com/resource.png",
-                    "mimeType": "image/png",
-                    "text": "Example image",
-                    "type": "resource"
-                }
-            }
-        ]
+        description="A list of parts that make up the agent's response."
     )
 
     class Config:
@@ -128,8 +85,8 @@ class AgentResponse(BaseModel):
                         "resource": {
                             "uri": "https://example.com/resource.png",
                             "mimeType": "image/png",
-                            "text": "Example image",
-                            "type": "resource"
+                            "text": "Example component",
+                            "type": "UIResource"
                         }
                     }
                 ]
