@@ -1,0 +1,17 @@
+[project]
+name = "mcp-ui-python"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "langchain-google-genai>=2.1.12",
+    "langchain>=0.3.27",
+    "mcp>=1.15.0",
+    "mcp-ui-server>=0.1.0",
+    "openai-agents>=0.3.3",
+    "python-dotenv>=1.1.1",
+    "langchain-community>=0.3.30",
+    "langchain-chroma>=0.2.6",
+    "fastapi>=0.118.0",
+]
